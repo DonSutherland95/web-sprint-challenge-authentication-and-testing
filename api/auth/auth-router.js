@@ -6,7 +6,7 @@ const { jwtSecret } = require('../../config/secret')
 const { isValid } = require("../users/users-service");
 const Users = require("../users/users-model");
 
-router.post('/register',validateUser, (req, res) => {
+router.post('/register',validateUser,validateUserName, (req, res) => {
   const credentials = req.body;
 
   if (isValid(credentials)) {
@@ -21,16 +21,17 @@ router.post('/register',validateUser, (req, res) => {
     Users.add(credentials)
       .then(user => {
         // console.log(user)
-        res.status(201).json({ data: user });
+        res.status(201).json(user);
       })
       .catch(error => {
         res.status(500).json({ message: error.message });
       });
-  } else {
-    res.status(400).json({
-      message: "username taken",
-    });
   }
+  // else {
+  //   res.status(400).json({
+  //     message: "username taken",
+  //   });
+  // }
 
   // res.end('implement register, please!');
   /*
@@ -125,10 +126,20 @@ function validateUser(req, res, next) {
   } else{
     next()
   }
-  
 }
 function validateUserName(req, res, next){
-  if(req.body.username)
+    Users.findUsername(req.body.username)
+      .then(username=>{
+        // console.log(username.length)
+        if(username.length === 1){
+          res.status(400).json("username taken")
+        } else {
+          next();
+        }
+      })
+      .catch(error=>{
+        res.status(500).json({ message: error.message });
+      })
 }
 
 module.exports = router;
